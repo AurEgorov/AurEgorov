@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Тирлист · фото + редактирование тиров</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+      padding: 20px;
+    }
+
+    .tierlist-container {
+      max-width: 1200px;
+      width: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 36px;
+      padding: 24px 28px 30px;
+      box-shadow: 0 25px 40px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    h1 {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-weight: 600;
+      font-size: 2.2rem;
+      letter-spacing: -0.01em;
+      color: #f0f3fa;
+      margin-bottom: 12px;
+      padding-left: 8px;
+      text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    h1 span {
+      background: #3b82f6;
+      font-size: 1rem;
+      padding: 4px 14px;
+      border-radius: 40px;
+      color: white;
+      font-weight: 500;
+      box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      color: #a0afc7;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .upload-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .upload-btn {
+      background: #2d3b52;
+      border: 1px solid #4b5e77;
+      color: #f1f5f9;
+      padding: 10px 20px;
+      border-radius: 60px;
+      font-weight: 500;
+      font-size: 0.95rem;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: all 0.2s;
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .upload-btn:hover {
+      background: #3f5169;
+      border-color: #7f96b3;
+      transform: scale(1.02);
+    }
+
+    .upload-btn input {
+      display: none;
+    }
+
+    .reset-btn, .reset-labels-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
+      padding: 10px 18px;
+      border-radius: 60px;
+      font-weight: 500;
+      font-size: 0.95rem;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: all 0.2s;
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .reset-btn:hover, .reset-labels-btn:hover {
+      background: #334155;
+      border-color: #64748b;
+      color: white;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Тир-ряды */
+    .tiers-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+
+    .tier-row {
+      display: flex;
+      align-items: stretch;
+      min-height: 120px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.25);
+      box-shadow: 0 8px 12px -6px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .tier-label {
+      width: 85px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 2rem;
+      text-transform: uppercase;
+      color: white;
+      text-shadow: 0 3px 5px rgba(0, 0, 0, 0.5);
+      border-radius: 20px 0 0 20px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: filter 0.15s;
+      position: relative;
+      user-select: none;
+    }
+
+    .tier-label:hover {
+      filter: brightness(1.1);
+    }
+
+    .tier-label.editing {
+      cursor: text;
+      background: #1e293b !important;
+      outline: 2px solid #fbbf24;
+    }
+
+    .tier-label input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      font-weight: 800;
+      font-size: 1.8rem;
+      text-align: center;
+      color: white;
+      text-transform: uppercase;
+      outline: none;
+      font-family: inherit;
+      padding: 0 4px;
+    }
+
+    /* Цвета тиров (используем как базовые, но редактироваться может) */
+    .tier-s .tier-label { background: linear-gradient(145deg, #dc2626, #b91c1c); }
+    .tier-a .tier-label { background: linear-gradient(145deg, #ea580c, #c2410c); }
+    .tier-b .tier-label { background: linear-gradient(145deg, #ca8a04, #a16207); }
+    .tier-c .tier-label { background: linear-gradient(145deg, #059669, #047857); }
+    .tier-d .tier-label { background: linear-gradient(145deg, #2563eb, #1d4ed8); }
+    .tier-f .tier-label { background: linear-gradient(145deg, #4b5563, #374151); }
+
+    .tier-items {
+      flex: 1;
+      padding: 12px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 0 20px 20px 0;
+      min-height: 120px;
+      transition: background 0.15s;
+      border-left: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .pool-section {
+      margin-top: 8px;
+    }
+
+    .pool-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .pool-header h2 {
+      color: #cbd5e1;
+      font-weight: 500;
+      font-size: 1.3rem;
+    }
+
+    .pool-badge {
+      background: #334155;
+      padding: 4px 14px;
+      border-radius: 30px;
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
+    .pool-items {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 24px;
+      padding: 20px 22px;
+      min-height: 150px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+      border: 1.5px dashed rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(4px);
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    /* Стиль карточек с изображениями */
+    .item {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      border-radius: 18px;
+      background: #1e293b;
+      box-shadow: 0 12px 18px -6px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-drag: element;
+      transition: transform 0.1s, box-shadow 0.2s, filter 0.1s;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .item:active {
+      cursor: grabbing;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 0 0 3px #60a5fa;
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+
+    .item.dragging {
+      opacity: 0.5;
+      transform: scale(0.95);
+    }
+
+    .item-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+      background: #0f172a;
+    }
+
+    .item-delete {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 24px;
+      height: 24px;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s, background 0.2s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      z-index: 5;
+      pointer-events: auto;
+      line-height: 1;
+    }
+
+    .item:hover .item-delete {
+      opacity: 1;
+    }
+
+    .item-delete:hover {
+      background: #ef4444;
+    }
+
+    /* Подсветка зоны дропа */
+    .tier-items.drag-over, .pool-items.drag-over {
+      background: rgba(59, 130, 246, 0.25);
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5) inset;
+    }
+
+    .edit-hint {
+      font-size: 0.75rem;
+      opacity: 0.7;
+      margin-left: 8px;
+    }
+
+    footer {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    @media (max-width: 650px) {
+      .tierlist-container { padding: 16px; }
+      h1 { font-size: 1.7rem; }
+      .tier-label { width: 65px; font-size: 1.6rem; }
+      .item { width: 80px; height: 80px; }
+    }
+
+    @media (max-width: 480px) {
+      .tier-row { flex-direction: column; }
+      .tier-label { width: 100%; border-radius: 20px 20px 0 0; padding: 8px 0; }
+      .tier-items { border-radius: 0 0 20px 20px; }
+    }
+  </style>
+</head>
+<body>
+<div class="tierlist-container">
+  <h1>
+    🖼️ ФОТО-ТИРЛИСТ
+    <span>редактируемые тиры</span>
+  </h1>
+
+  <div class="toolbar">
+    <div class="upload-area">
+      <label class="upload-btn">
+        📤 Загрузить изображения
+        <input type="file" id="imageUploadInput" accept="image/*" multiple>
+      </label>
+      <span class="edit-hint">✏️ двойной клик по тиру — изменить</span>
+    </div>
+    <div class="button-group">
+      <button class="reset-labels-btn" id="resetLabelsBtn" title="Вернуть стандартные названия S,A,B,C,D,F">🔄 Сбросить тиры</button>
+      <button class="reset-btn" id="resetBtn" title="Удалить все загруженные фото">🗑️ Очистить всё</button>
+    </div>
+  </div>
+
+  <!-- Тир-лист -->
+  <div class="tiers-wrapper" id="tiersWrapper">
+    <div class="tier-row tier-s" data-tier="S">
+      <div class="tier-label" data-tier-label="S">S</div>
+      <div class="tier-items" id="tierS" data-tier-container="S"></div>
+    </div>
+    <div class="tier-row tier-a" data-tier="A">
+      <div class="tier-label" data-tier-label="A">A</div>
+      <div class="tier-items" id="tierA" data-tier-container="A"></div>
+    </div>
+    <div class="tier-row tier-b" data-tier="B">
+      <div class="tier-label" data-tier-label="B">B</div>
+      <div class="tier-items" id="tierB" data-tier-container="B"></div>
+    </div>
+    <div class="tier-row tier-c" data-tier="C">
+      <div class="tier-label" data-tier-label="C">C</div>
+      <div class="tier-items" id="tierC" data-tier-container="C"></div>
+    </div>
+    <div class="tier-row tier-d" data-tier="D">
+      <div class="tier-label" data-tier-label="D">D</div>
+      <div class="tier-items" id="tierD" data-tier-container="D"></div>
+    </div>
+    <div class="tier-row tier-f" data-tier="F">
+      <div class="tier-label" data-tier-label="F">F</div>
+      <div class="tier-items" id="tierF" data-tier-container="F"></div>
+    </div>
+  </div>
+
+  <!-- Пул (без ранга) -->
+  <div class="pool-section">
+    <div class="pool-header">
+      <h2>📦 Без ранга</h2>
+      <div class="pool-badge" id="itemCount">0 карточек</div>
+    </div>
+    <div class="pool-items" id="poolContainer" data-tier-container="pool"></div>
+  </div>
+  <footer>
+    <span>🖱️ Наведи на фото — удалить</span>
+    <span>✏️ Двойной клик по тиру — переименовать</span>
+  </footer>
+</div>
+
+<script>
+  (function() {
+    "use strict";
+
+    // ----- DOM элементы -----
+    const tierS = document.getElementById('tierS');
+    const tierA = document.getElementById('tierA');
+    const tierB = document.getElementById('tierB');
+    const tierC = document.getElementById('tierC');
+    const tierD = document.getElementById('tierD');
+    const tierF = document.getElementById('tierF');
+    const poolContainer = document.getElementById('poolContainer');
+    const itemCountSpan = document.getElementById('itemCount');
+    const fileInput = document.getElementById('imageUploadInput');
+    const resetBtn = document.getElementById('resetBtn');
+    const resetLabelsBtn = document.getElementById('resetLabelsBtn');
+
+    const dropContainers = [tierS, tierA, tierB, tierC, tierD, tierF, poolContainer];
+    const tierLabels = document.querySelectorAll('.tier-label');
+
+    // Стандартные названия тиров (ключ — data-tier-label)
+    const defaultLabels = {
+      S: 'S', A: 'A', B: 'B', C: 'C', D: 'D', F: 'F'
+    };
+
+    let draggedItem = null;
+    let currentEditingLabel = null; // элемент .tier-label в режиме редактирования
+
+    // ----- Вспомогательные функции -----
+    function updatePoolCount() {
+      const total = document.querySelectorAll('.item').length;
+      const word = (n) => {
+        if (n % 10 === 1 && n % 100 !== 11) return 'карточка';
+        if ([2,3,4].includes(n%10) && ![12,13,14].includes(n%100)) return 'карточки';
+        return 'карточек';
+      };
+      itemCountSpan.textContent = `${total} ${word(total)}`;
+    }
+
+    // Создание карточки с изображением
+    function createImageItem(imageFile) {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'item';
+      itemDiv.setAttribute('draggable', 'true');
+
+      const img = document.createElement('img');
+      img.className = 'item-img';
+      img.alt = 'загруженное изображение';
+      img.draggable = false;
+
+      const reader = new FileReader();
+      reader.onload = (e) => { img.src = e.target.result; };
+      reader.readAsDataURL(imageFile);
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'item-delete';
+      deleteBtn.innerHTML = '✕';
+      deleteBtn.setAttribute('aria-label', 'Удалить');
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        itemDiv.remove();
+        updatePoolCount();
+      });
+
+      itemDiv.appendChild(img);
+      itemDiv.appendChild(deleteBtn);
+      attachDragListenersToItem(itemDiv);
+      return itemDiv;
+    }
+
+    function attachDragListenersToItem(item) {
+      item.addEventListener('dragstart', dragStartHandler);
+      item.addEventListener('dragend', dragEndHandler);
+    }
+
+    function refreshAllDragListeners() {
+      document.querySelectorAll('.item').forEach(item => {
+        item.removeEventListener('dragstart', dragStartHandler);
+        item.removeEventListener('dragend', dragEndHandler);
+        item.addEventListener('dragstart', dragStartHandler);
+        item.addEventListener('dragend', dragEndHandler);
+      });
+    }
+
+    // ----- Drag & Drop -----
+    function dragStartHandler(e) {
+      draggedItem = this;
+      this.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', '');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function dragEndHandler(e) {
+      this.classList.remove('dragging');
+      dropContainers.forEach(c => c.classList.remove('drag-over'));
+      setTimeout(() => { draggedItem = null; }, 100);
+    }
+
+    function dragoverHandler(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      e.currentTarget.classList.add('drag-over');
+    }
+
+    function dragleaveHandler(e) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+
+    function dropHandler(e) {
+      e.preventDefault();
+      const container = e.currentTarget;
+      container.classList.remove('drag-over');
+
+      if (!draggedItem || !draggedItem.classList.contains('item')) return;
+
+      container.appendChild(draggedItem);
+      updatePoolCount();
+      draggedItem.classList.remove('dragging');
+      draggedItem = null;
+      dropContainers.forEach(c => c.classList.remove('drag-over'));
+    }
+
+    function initDropZones() {
+      dropContainers.forEach(container => {
+        if (!container) return;
+        container.removeEventListener('dragover', dragoverHandler);
+        container.removeEventListener('dragleave', dragleaveHandler);
+        container.removeEventListener('drop', dropHandler);
+        container.addEventListener('dragover', dragoverHandler);
+        container.addEventListener('dragleave', dragleaveHandler);
+        container.addEventListener('drop', dropHandler);
+      });
+    }
+
+    document.addEventListener('dragover', (e) => e.preventDefault());
+    document.addEventListener('drop', (e) => e.preventDefault());
+    document.addEventListener('dragend', () => {
+      dropContainers.forEach(c => c.classList.remove('drag-over'));
+      if (draggedItem) {
+        draggedItem.classList.remove('dragging');
+        draggedItem = null;
+      }
+    });
+
+    // ----- Редактирование названий тиров -----
+    function enableLabelEditing(labelEl) {
+      if (currentEditingLabel) return; // уже редактируется
+
+      const originalText = labelEl.textContent;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = originalText;
+      input.maxLength = 8;
+
+      labelEl.classList.add('editing');
+      labelEl.textContent = '';
+      labelEl.appendChild(input);
+      input.focus();
+      input.select();
+
+      currentEditingLabel = labelEl;
+
+      const finishEditing = (save) => {
+        if (!currentEditingLabel) return;
+        const inp = currentEditingLabel.querySelector('input');
+        let newText = inp ? inp.value.trim() : '';
+        if (newText === '') newText = originalText; // не даём пустое
+
+        // Сохраняем новое значение в data-атрибут и текстовое содержимое
+        currentEditingLabel.textContent = newText;
+        const tierRow = currentEditingLabel.closest('.tier-row');
+        if (tierRow) {
+          const tierKey = Array.from(tierRow.classList).find(c => c.startsWith('tier-'))?.replace('tier-', '');
+          if (tierKey) {
+            currentEditingLabel.setAttribute('data-tier-label', newText);
+          }
+        }
+        currentEditingLabel.classList.remove('editing');
+        currentEditingLabel = null;
+      };
+
+      const cancelEditing = () => {
+        if (!currentEditingLabel) return;
+        currentEditingLabel.textContent = originalText;
+        currentEditingLabel.classList.remove('editing');
+        currentEditingLabel = null;
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          finishEditing(true);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          cancelEditing();
+        }
+      });
+
+      input.addEventListener('blur', () => {
+        finishEditing(true);
+      });
+    }
+
+    // Сброс названий тиров к стандартным
+    function resetTierLabelsToDefault() {
+      tierLabels.forEach(label => {
+        const tierRow = label.closest('.tier-row');
+        if (!tierRow) return;
+        const tierClass = Array.from(tierRow.classList).find(c => c.startsWith('tier-'));
+        const key = tierClass ? tierClass.replace('tier-', '') : null;
+        if (key && defaultLabels[key]) {
+          label.textContent = defaultLabels[key];
+          label.setAttribute('data-tier-label', defaultLabels[key]);
+        }
+        label.classList.remove('editing');
+      });
+      if (currentEditingLabel) {
+        currentEditingLabel.classList.remove('editing');
+        currentEditingLabel = null;
+      }
+    }
+
+    // Инициализация двойного клика для редактирования
+    tierLabels.forEach(label => {
+      label.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        if (label.classList.contains('editing')) return;
+        enableLabelEditing(label);
+      });
+    });
+
+    resetLabelsBtn.addEventListener('click', resetTierLabelsToDefault);
+
+    // ----- Загрузка изображений -----
+    fileInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
+
+      files.forEach(file => {
+        if (!file.type.startsWith('image/')) {
+          alert(`Файл "${file.name}" не является изображением`);
+          return;
+        }
+        const newItem = createImageItem(file);
+        poolContainer.appendChild(newItem);
+      });
+
+      updatePoolCount();
+      refreshAllDragListeners();
+      fileInput.value = '';
+    });
+
+    // ----- Сброс всех карточек -----
+    function resetAllItems() {
+      dropContainers.forEach(container => {
+        if (container) container.innerHTML = '';
+      });
+      updatePoolCount();
+    }
+
+    resetBtn.addEventListener('click', resetAllItems);
+
+    // ----- Инициализация -----
+    initDropZones();
+    updatePoolCount();
+
+    window.addEventListener('load', () => {
+      updatePoolCount();
+    });
+
+  })();
+</script>
+</body>
+</html>
